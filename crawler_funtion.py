@@ -1,63 +1,46 @@
-#coding:gbk
+# coding:utf-8
 import tushare as ts
+from bs4 import BeautifulSoup
+from urllib.request import urlopen
 import pandas as pd
-import requests
 import re
 import time
 import xlrd
 import xlwt
 from xlutils.copy import copy
-from bs4 import BeautifulSoup
-from urllib.request import urlopen
-from selenium import  webdriver #´Óselenium¿âÖĞµ÷ÓÃwebdriverÄ£¿é
-from selenium.webdriver.chrome.options import Options # ´ÓoptionsÄ£¿éÖĞµ÷ÓÃOptionsÀà
 
 pd.set_option('display.unicode.ambiguous_as_wide', True)
 pd.set_option('display.unicode.east_asian_width', True)
-#ÓÃÀ´ĞŞ¸Ädataframe¸ñÊ½
-chrome_options = Options()  # ÊµÀı»¯Option¶ÔÏó
-chrome_options.add_argument('--headless')  # °ÑChromeä¯ÀÀÆ÷ÉèÖÃÎª¾²Ä¬Ä£Ê½
 
+
+# ç”¨æ¥ä¿®æ”¹dataframeæ ¼å¼
 
 
 def get_detailed_info(aim_url, aim_name):
-
-    #ÊäÈëurlºÍÃû×Ö£¬Êä³öÒ»¸öDF
+    # è¾“å…¥urlå’Œåå­—ï¼Œè¾“å‡ºä¸€ä¸ªDF
     institutes = []
     amounts = []
-    #Ã¿¸öÁú»¢°ñ¹ÉÆ±µÄurl
-    driver = webdriver.Chrome(options=chrome_options)  # ÉèÖÃÒıÇæÎªChrome£¬ÔÚºóÌ¨Ä¬Ä¬ÔËĞĞ
-    driver.get(
-    aim_url)
-    time.sleep(3)
-    # ÒÔÏÂ·½·¨¶¼¿ÉÒÔ´ÓÍøÒ³ÖĞÌáÈ¡³ö'ÄãºÃ£¬Ö©ÖëÏÀ£¡'Õâ¶ÎÎÄ×Ö
-    html = driver.page_source
-    driver.close()
+    # æ¯ä¸ªé¾™è™æ¦œè‚¡ç¥¨çš„url
+    html = urlopen(aim_url).read().decode('gbk')
     soup = BeautifulSoup(html, features='lxml')
-    #½âÎö³ösoup
+    # è§£æå‡ºsoup
 
     try:
-        aim_div = soup.find('div', {'class': 'content main-content'})
-        rows_for_institutes = aim_div.find_all('div', class_= 'sc-name')
-        print(rows_for_institutes)
+        aim_div = soup.find('div', {'class': 'content-sepe'})
+        rows_for_institutes = aim_div.find_all('div', {'class': 'sc-name'})
     except:
-        print("½âÎöÍøÒ³³öÏÖ´íÎó£¬¹ÉÆ±Ãû£º", aim_name)
+        print("è§£æç½‘é¡µå‡ºç°é”™è¯¯ï¼Œè‚¡ç¥¨åï¼š", aim_name)
     else:
         if len(rows_for_institutes) < 10:
-            print("¸ö¹ÉÁú»¢Êı¾İ»ñÈ¡Á¿Îª%d¸ö£¬²»×ã10¸ö" % len(rows_for_institutes))
+            print("ä¸ªè‚¡é¾™è™æ•°æ®è·å–é‡ä¸º%dä¸ªï¼Œä¸è¶³10ä¸ª" % len(rows_for_institutes))
         for row in rows_for_institutes:
             institute = row.find_all('a')
-            print("¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª")
-            print(type(institute))
-            print(institute[0])
-            print(institute)
-            print("¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª")
-            institutes.append(institute[0].get_text())
-#½«ÂòÈëºÍÂô³öµÄ¸÷Îå¸öÓªÒµ²¿Ò»¹²Ê®¸ö£¬·ÅÔÚinstitutesÁĞ±íÖĞ
+            institutes.append(institute[1].get_text())
+        # å°†ä¹°å…¥å’Œå–å‡ºçš„å„äº”ä¸ªè¥ä¸šéƒ¨ä¸€å…±åä¸ªï¼Œæ”¾åœ¨institutesåˆ—è¡¨ä¸­
         try:
             trs = aim_div.find_all('tr')
         except:
-            print("½âÎö±í¸ñ³öÏÖ´íÎó£¬¹ÉÆ±Ãû£º", aim_name)
+            print("è§£æè¡¨æ ¼å‡ºç°é”™è¯¯ï¼Œè‚¡ç¥¨åï¼š", aim_name)
         else:
             for tr in trs[2:7]:
                 tds = tr.find_all('td')
@@ -65,122 +48,116 @@ def get_detailed_info(aim_url, aim_name):
             for tr in trs[9:14]:
                 tds = tr.find_all('td')
                 amounts.append(tds[4].get_text())
-#ÖÁ´Ë£¬ÂòÂô½ğ¶îÒ²·ÅÔÚÒ»¸öÁĞ±íÖĞ£¬¹²¼Æ10¸ö£¬ÕıºÃÓëÓªÒµ²¿Æ¥Åä
+    # è‡³æ­¤ï¼Œä¹°å–é‡‘é¢ä¹Ÿæ”¾åœ¨ä¸€ä¸ªåˆ—è¡¨ä¸­ï¼Œå…±è®¡10ä¸ªï¼Œæ­£å¥½ä¸è¥ä¸šéƒ¨åŒ¹é…
     mid = []
     for ist in institutes[:]:
-        ist = ist.replace("¹É·İÓĞÏŞ¹«Ë¾", "")
-        ist = ist.replace("ÓĞÏŞÔğÈÎ¹«Ë¾", "")
-        ist = ist.replace("¹úÌ©¾ı°²Ö¤È¯", "¹úÌ©¾ı°²")
-        ist = ist.replace("ÓĞÏŞ¹«Ë¾", "")
-        ist = ist.replace("Ö¤È¯ÓªÒµ²¿", "")
+        ist = ist.replace("è‚¡ä»½æœ‰é™å…¬å¸", "")
+        ist = ist.replace("æœ‰é™è´£ä»»å…¬å¸", "")
+        ist = ist.replace("å›½æ³°å›å®‰è¯åˆ¸", "å›½æ³°å›å®‰")
+        ist = ist.replace("æœ‰é™å…¬å¸", "")
+        ist = ist.replace("è¯åˆ¸è¥ä¸šéƒ¨", "")
         mid.append(ist)
-    test_dict = {
-        "¹ÉÆ±Ãû³Æ": [aim_name] * 10,
-        'ÓªÒµ²¿': mid,
-        "Âò/Âô": ['Âò', 'Âò', 'Âò', 'Âò', 'Âò', 'Âô', 'Âô', 'Âô', 'Âô', 'Âô'],
-        "°ñÎ»": [1, 2, 3, 4, 5, 1, 2, 3, 4, 5],
-        '½ğ¶î': amounts
-    }
-    print(amounts,mid)
+    test_dict = {"è‚¡ç¥¨åç§°": [aim_name] * 10, 'è¥ä¸šéƒ¨': mid, "ä¹°/å–": ['ä¹°', 'ä¹°', 'ä¹°', 'ä¹°', 'ä¹°', 'å–', 'å–', 'å–', 'å–', 'å–'],
+                 "æ¦œä½": [1, 2, 3, 4, 5, 1, 2, 3, 4, 5], 'é‡‘é¢': amounts}
     df = pd.DataFrame(test_dict)
     time.sleep(2)
     return df
 
 
-#ÒÔÏÂÉ¸Ñ¡º¬ÓĞÍòºÍµÄ¹ÉÆ±
-#ÒÔÏÂÉ¸Ñ¡º¬ÓĞÍòºÍµÄ¹ÉÆ±
+# ä»¥ä¸‹ç­›é€‰å«æœ‰ä¸‡å’Œçš„è‚¡ç¥¨
 def get_huaxin(data):
-	for idx,row in enumerate(data['ÓªÒµ²¿']):
-		if row.find("ÍòºÍ") <0:
-			data.drop([idx],inplace=True)
-		else:
-			pass
-			data.loc[idx,'ÓªÒµ²¿']=row.replace("ÍòºÍÖ¤È¯","")
-	total=data.shape[0]
-	buy=0
-	sell=0
-	data=data.reset_index()
-	for i in range(total):
-		if data.loc[i,'°ñÎ»']==1 and data.loc[i,'Âò/Âô']=='Âò':
-			buy += 1
-		if data.loc[i,'°ñÎ»']==1 and data.loc[i,'Âò/Âô']=='Âô':
-			sell += 1
+    for idx, row in enumerate(data['è¥ä¸šéƒ¨']):
+        if row.find("ä¸‡å’Œ") < 0:
+            data.drop([idx], inplace=True)
+        else:
+            pass
+            data.loc[idx, 'è¥ä¸šéƒ¨'] = row.replace("ä¸‡å’Œè¯åˆ¸", "")
+    total = data.shape[0]
+    buy = 0
+    sell = 0
+    data = data.reset_index()
+    for i in range(total):
+        if data.loc[i, 'æ¦œä½'] == 1 and data.loc[i, 'ä¹°/å–'] == 'ä¹°':
+            buy += 1
+        if data.loc[i, 'æ¦œä½'] == 1 and data.loc[i, 'ä¹°/å–'] == 'å–':
+            sell += 1
 
-	other=total-buy-sell
-	return data,total,buy,sell,other
+    other = total - buy - sell
+    return data, total, buy, sell, other
 
 
-def get_hot_money(data,hot_money_name):
-	
-	hm_df=pd.DataFrame(columns=['¹ÉÆ±Ãû³Æ','ÓªÒµ²¿','Âò/Âô','°ñÎ»','½ğ¶î'])
-	for idx,row in enumerate(data['ÓªÒµ²¿']):
-		if row in hot_money_name:
-			hm_df=hm_df.append(data[idx:idx+1])
-	hm_df=hm_df.reset_index()
-	total=hm_df.shape[0]
-	buy=0
-	sell=0
-	for i in range(total):
-		if hm_df.loc[i,'°ñÎ»']==1 and hm_df.loc[i,'Âò/Âô']=='Âò':
-			buy += 1
-		if hm_df.loc[i,'°ñÎ»']==1 and hm_df.loc[i,'Âò/Âô']=='Âô':
-			sell += 1
-	other=total-buy-sell
-	return hm_df,total,buy,sell,other
+def get_hot_money(data, hot_money_name):
+    hm_df = pd.DataFrame(columns=['è‚¡ç¥¨åç§°', 'è¥ä¸šéƒ¨', 'ä¹°/å–', 'æ¦œä½', 'é‡‘é¢'])
+    for idx, row in enumerate(data['è¥ä¸šéƒ¨']):
+        if row in hot_money_name:
+            hm_df = hm_df.append(data[idx:idx + 1])
+    hm_df = hm_df.reset_index()
+    total = hm_df.shape[0]
+    buy = 0
+    sell = 0
+    for i in range(total):
+        if hm_df.loc[i, 'æ¦œä½'] == 1 and hm_df.loc[i, 'ä¹°/å–'] == 'ä¹°':
+            buy += 1
+        if hm_df.loc[i, 'æ¦œä½'] == 1 and hm_df.loc[i, 'ä¹°/å–'] == 'å–':
+            sell += 1
+    other = total - buy - sell
+    return hm_df, total, buy, sell, other
 
-	
-def set_style(name,height,bold=False,border=False,align=False):
-	style=xlwt.XFStyle()
-	font=xlwt.Font()
-	font.name=name
-	font.height=height
-	font.bold=bold
-	style.font=font
-	if border:
-		borders=xlwt.Borders()
-		borders.top=xlwt.Borders.THIN
-		borders.bottom=xlwt.Borders.THIN
-		borders.left=xlwt.Borders.THIN
-		borders.right=xlwt.Borders.THIN
-		style.borders=borders
-	if align:
-		alignment=xlwt.Alignment()
-		alignment.horz=xlwt.Alignment.HORZ_CENTER
-		style.alignment=alignment
-	return style
-#¶¨Òå¸ñÊ½
 
-def change_excel(): #ĞŞ¸Ä±í¸ñ¸ñÊ½µÄÖ÷º¯Êı
-	today=time.strftime("%Y-%m-%d")
-	filename=today + ".xls"
-	old_excel=xlrd.open_workbook(filename,formatting_info=True)
-	old_sheet=old_excel.sheet_by_index(0)
-	new_excel=copy(old_excel)
-	new_sheet=new_excel.get_sheet(0)
-	new_sheet.write_merge(0,0,0,9,today+'Áú»¢°ñ',set_style('ËÎÌå',320,bold=True,align=True))
-	#ÉèÖÃ±êÌâ
-	max_width=[]
-	for j in range(old_sheet.ncols):
-		max_width.append(0)
-		for i in range(old_sheet.nrows):
-			if (len(str(old_sheet.cell_value(i,j)))*580)>max_width[j]:
-				max_width[j]=len(str(old_sheet.cell_value(i,j))*580)
-			#µÃµ½Ã¿Ò»ÁĞ×î´óÁĞ¿í
-	for j in range(old_sheet.ncols): #ÉèÖÃ±íÍ·
-		new_sheet.write(1,j,old_sheet.cell_value(0,j),
-			set_style('ËÎÌå',220,bold=True,border=True,align=True))
-	
-	for i in range(1,old_sheet.nrows):
-		for j in [0,5,6]:
-			new_sheet.write(i+1,j,old_sheet.cell_value(i,j),
-					set_style('ËÎÌå',200))
-		for j in [1,2,3,4,7,8,9]:
-			new_sheet.write(i+1,j,old_sheet.cell_value(i,j),
-					set_style('ËÎÌå',200,align=True))
+def set_style(name, height, bold=False, border=False, align=False):
+    style = xlwt.XFStyle()
+    font = xlwt.Font()
+    font.name = name
+    font.height = height
+    font.bold = bold
+    style.font = font
+    if border:
+        borders = xlwt.Borders()
+        borders.top = xlwt.Borders.THIN
+        borders.bottom = xlwt.Borders.THIN
+        borders.left = xlwt.Borders.THIN
+        borders.right = xlwt.Borders.THIN
+        style.borders = borders
+    if align:
+        alignment = xlwt.Alignment()
+        alignment.horz = xlwt.Alignment.HORZ_CENTER
+        style.alignment = alignment
+    return style
 
-	for j in range(len(max_width)):
-		new_sheet.col(j).width=max_width[j]
-	new_sheet.col(9).width=2200
-	new_excel.save(filename)
-	
+
+# å®šä¹‰æ ¼å¼
+
+def change_excel():  # ä¿®æ”¹è¡¨æ ¼æ ¼å¼çš„ä¸»å‡½æ•°
+    today = time.strftime("%Y-%m-%d")
+    filename = today + ".xls"
+    old_excel = xlrd.open_workbook(filename, formatting_info=True)
+    old_sheet = old_excel.sheet_by_index(0)
+    new_excel = copy(old_excel)
+    new_sheet = new_excel.get_sheet(0)
+    new_sheet.write_merge(0, 0, 0, 9, today + 'é¾™è™æ¦œ', set_style('å®‹ä½“', 320, bold=True, align=True))
+    # è®¾ç½®æ ‡é¢˜
+    max_width = []
+    for j in range(old_sheet.ncols):
+        max_width.append(0)
+        for i in range(old_sheet.nrows):
+            if (len(str(old_sheet.cell_value(i, j))) * 580) > max_width[j]:
+                max_width[j] = len(str(old_sheet.cell_value(i, j)) * 580)
+    # å¾—åˆ°æ¯ä¸€åˆ—æœ€å¤§åˆ—å®½
+    for j in range(old_sheet.ncols):  # è®¾ç½®è¡¨å¤´
+        new_sheet.write(1, j, old_sheet.cell_value(0, j),
+                        set_style('å®‹ä½“', 220, bold=True, border=True, align=True))
+
+    for i in range(1, old_sheet.nrows):
+        for j in [0, 5, 6]:
+            new_sheet.write(i + 1, j, old_sheet.cell_value(i, j),
+                            set_style('å®‹ä½“', 200))
+        for j in [1, 2, 3, 4, 7, 8, 9]:
+            new_sheet.write(i + 1, j, old_sheet.cell_value(i, j),
+                            set_style('å®‹ä½“', 200, align=True))
+
+    for j in range(len(max_width)):
+        new_sheet.col(j).width = max_width[j]
+    new_sheet.col(9).width = 2200
+    new_excel.save(filename)
+
 
